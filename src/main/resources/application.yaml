@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/assistant
+    username: admin
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update       # 自动建表，非常方便
+    show-sql: true           # 打印SQL日志，方便调试
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8081                 # 项目启动后的访问端口
