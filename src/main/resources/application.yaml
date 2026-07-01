@@ -15,3 +15,7 @@ spring:
 
 server:
   port: 8081                 # 项目启动后的访问端口
+
+jwt:
+  secret: gan7777-ai-assistant-secret-key-2026-very-long-and-secure
+  expiration: 86400000  # 24小时，单位毫秒

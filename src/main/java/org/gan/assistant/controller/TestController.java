@@ -9,6 +9,6 @@ public class TestController {
 
     @GetMapping("/hello")
     public String sayHello(){
-        return "项目启动完成!AI助理后端已就绪！";
+        return "项目启动完成!AI助理后端已就绪！显示成功";
     }
 }
