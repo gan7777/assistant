@@ -1,5 +1,6 @@
 package org.gan.assistant.controller;
 
+import jakarta.validation.Valid;
 import org.gan.assistant.dto.ScheduleRequest;
 import org.gan.assistant.dto.ScheduleResponse;
 import org.gan.assistant.entity.Schedule;
@@ -18,7 +19,7 @@ public class ScheduleController {
     private ScheduleService scheduleService;
 
     @PostMapping
-    public ResponseEntity<?> createSchedule(@RequestBody ScheduleRequest request){
+    public ResponseEntity<?> createSchedule(@Valid @RequestBody ScheduleRequest request){
         ScheduleResponse schedule=scheduleService.createSchedule(request);
         return ResponseEntity.ok(schedule);
     }
@@ -43,7 +44,7 @@ public class ScheduleController {
 
     //修改行程
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateSchedule(@PathVariable Long id,@RequestBody ScheduleRequest request){
+    public ResponseEntity<?> updateSchedule(@PathVariable Long id,@Valid @RequestBody ScheduleRequest request){
         Schedule schedule=scheduleService.updateSchedelu(id,request);
         return ResponseEntity.ok(schedule);
     }

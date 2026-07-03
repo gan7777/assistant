@@ -1,6 +1,7 @@
 package org.gan.assistant.controller;
 
 
+import jakarta.validation.Valid;
 import org.gan.assistant.dto.AuthResponse;
 import org.gan.assistant.dto.LoginRequest;
 import org.gan.assistant.dto.RegisterRequest;
@@ -14,8 +15,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     @Autowired
     private AuthService authService;
+
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request){
+    public ResponseEntity<?> register( @Valid @RequestBody RegisterRequest request){
         try{
             String message=authService.register(request);
             return ResponseEntity.ok(new AuthResponse(null,request.getUsername(),message));
