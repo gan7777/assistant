@@ -1,5 +1,7 @@
 package org.gan.assistant.service;
 
+import org.gan.assistant.dto.PageResponse;
+import org.gan.assistant.dto.SchedulePageRequest;
 import org.gan.assistant.dto.ScheduleRequest;
 import org.gan.assistant.dto.ScheduleResponse;
 import org.gan.assistant.entity.Schedule;
@@ -7,12 +9,16 @@ import org.gan.assistant.entity.User;
 import org.gan.assistant.repository.ScheduleRepository;
 import org.gan.assistant.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ScheduleService {
@@ -98,6 +104,39 @@ public class ScheduleService {
             response.setUsername(schedule.getUser().getUsername());
         }
         return response;
+    }
+
+    public PageResponse<ScheduleResponse> getSchedulesPage(SchedulePageRequest request){
+        User currentUser=securityUtils.getCurrentUser();
+
+        //构建分页对象
+        Pageable pageable= PageRequest.of(request.getPage(),request.getSize());
+
+        //执行分页查询
+
+        Page<Schedule> schedulePage=scheduleRepository.findSchedulesByUserWithFilters(
+                currentUser.getId(),
+                request.getKeyword(),
+                request.getStartDate(),
+                request.getEndDate(),
+                pageable
+        );
+
+        //将Schedule 实体转换为ScheduleeResponse DTO
+        List<ScheduleResponse> content=schedulePage.getContent().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+
+        //返回分页响应
+        return new PageResponse<>(
+                content,
+                schedulePage.getNumber(),
+                schedulePage.getSize(),
+                schedulePage.getTotalElements(),
+                schedulePage.getTotalPages(),
+                schedulePage.isFirst(),
+                schedulePage.isLast()
+        );
     }
 
 }

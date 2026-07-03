@@ -1,6 +1,8 @@
 package org.gan.assistant.controller;
 
 import jakarta.validation.Valid;
+import org.gan.assistant.dto.PageResponse;
+import org.gan.assistant.dto.SchedulePageRequest;
 import org.gan.assistant.dto.ScheduleRequest;
 import org.gan.assistant.dto.ScheduleResponse;
 import org.gan.assistant.entity.Schedule;
@@ -54,5 +56,11 @@ public class ScheduleController {
     public ResponseEntity<?> deleteSchedule(@PathVariable Long id){
         scheduleService.deleteSchedule(id);
         return ResponseEntity.ok("删除成功");
+    }
+
+    @GetMapping("/page")
+    public ResponseEntity<?> getSchedulesPage(SchedulePageRequest request){
+        PageResponse<ScheduleResponse> page=scheduleService.getSchedulesPage(request);
+        return ResponseEntity.ok(page);
     }
 }
