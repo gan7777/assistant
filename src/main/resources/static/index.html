@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 行程助理</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background: #f5f7fa; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea, button { display: block; width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background: #45a049; }
+        .hidden { display: none; }
+        .schedule-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .schedule-item:last-child { border-bottom: none; }
+        .tag { background: #e0e7ff; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        #aiResponse { background: #f0f4ff; padding: 12px; border-radius: 6px; border-left: 4px solid #4CAF50; }
+        .loading { color: #666; font-style: italic; }
+        .error { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 6px; }
+        .success { color: #16a34a; background: #dcfce7; padding: 10px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+<h1>🤖 AI 智能行程助理</h1>
+
+<!-- 登录区域 -->
+<div id="loginSection" class="card">
+    <h2>登录</h2>
+    <input type="text" id="username" placeholder="用户名" value="zhangsan">
+    <input type="password" id="password" placeholder="密码" value="123456">
+    <button onclick="login()">登录</button>
+    <p id="loginError" class="error hidden"></p>
+</div>
+
+<!-- 主功能区域（登录后显示） -->
+<div id="mainSection" class="hidden">
+    <!-- AI 对话创建行程 -->
+    <div class="card">
+        <h2>🗣️ 用一句话创建行程</h2>
+        <p style="font-size:14px;color:#666;">例如：“明天下午3点开会” 或 “后天上午10点去健身房”</p>
+        <input type="text" id="aiInput" placeholder="输入自然语言描述..." style="width:100%;">
+        <button onclick="aiCreate()">🤖 AI 创建行程</button>
+        <div id="aiResponse" class="hidden"></div>
+    </div>
+
+    <!-- 创建行程（传统表单） -->
+    <div class="card">
+        <h2>📝 手动创建行程</h2>
+        <input type="text" id="title" placeholder="标题">
+        <input type="text" id="description" placeholder="描述（可选）">
+        <input type="datetime-local" id="startTime">
+        <input type="datetime-local" id="endTime">
+        <button onclick="createSchedule()">创建行程</button>
+        <p id="createResult" class="hidden"></p>
+    </div>
+
+    <!-- 行程列表 -->
+    <div class="card">
+        <h2>📅 我的行程</h2>
+        <div style="display:flex;gap:10px;margin-bottom:10px;">
+            <input type="text" id="keyword" placeholder="搜索标题..." style="flex:1;">
+            <button onclick="loadSchedules()" style="width:auto;padding:10px 20px;">搜索</button>
+        </div>
+        <div id="scheduleList"></div>
+        <div id="pagination" style="display:flex;gap:10px;margin-top:10px;"></div>
+    </div>
+</div>
+
+<script>
+    let token = localStorage.getItem('token') || '';
+    let currentPage = 0;
+
+    // 检查登录状态
+    if (token) {
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('mainSection').classList.remove('hidden');
+        loadSchedules();
+    }
+
+    async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const errorEl = document.getElementById('loginError');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                token = data.token;
+                localStorage.setItem('token', token);
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainSection').classList.remove('hidden');
+                loadSchedules();
+            } else {
+                errorEl.textContent = data.message || '登录失败';
+                errorEl.classList.remove('hidden');
+            }
+        } catch (e) {
+            errorEl.textContent = '网络错误';
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    function getHeaders() {
+        return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+    }
+
+    async function loadSchedules(page = 0) {
+        currentPage = page;
+        const keyword = document.getElementById('keyword').value;
+        try {
+            const res = await fetch(`/api/schedules/page?page=${page}&size=10&keyword=${keyword}`, { headers: getHeaders() });
+            const data = await res.json();
+            renderSchedules(data);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderSchedules(data) {
+        const list = document.getElementById('scheduleList');
+        if (!data.content || data.content.length === 0) {
+            list.innerHTML = '<p style="color:#666;">暂无行程</p>';
+            return;
+        }
+        list.innerHTML = data.content.map(s => `
+                <div class="schedule-item">
+                    <strong>${s.title}</strong>
+                    <span class="tag">${s.startTime ? new Date(s.startTime).toLocaleString() : '未设置时间'}</span>
+                    ${s.description ? `<p style="margin:4px 0;color:#666;">${s.description}</p>` : ''}
+                </div>
+            `).join('');
+
+        const pagination = document.getElementById('pagination');
+        pagination.innerHTML = `
+                <button onclick="loadSchedules(${data.pageNumber - 1})" ${data.first ? 'disabled' : ''}>上一页</button>
+                <span>第 ${data.pageNumber + 1} / ${data.totalPages} 页</span>
+                <button onclick="loadSchedules(${data.pageNumber + 1})" ${data.last ? 'disabled' : ''}>下一页</button>
+            `;
+    }
+
+    async function createSchedule() {
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        const resultEl = document.getElementById('createResult');
+
+        if (!title || !startTime) {
+            resultEl.textContent = '请填写标题和开始时间';
+            resultEl.className = 'error';
+            resultEl.classList.remove('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/schedules', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ title, description, startTime, endTime: endTime || null })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                resultEl.textContent = '✅ 行程创建成功！';
+                resultEl.className = 'success';
+                resultEl.classList.remove('hidden');
+                loadSchedules(currentPage);
+                document.getElementById('title').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('startTime').value = '';
+                document.getElementById('endTime').value = '';
+            } else {
+                resultEl.textContent = '❌ ' + (data.message || '创建失败');
+                resultEl.className = 'error';
+                resultEl.classList.remove('hidden');
+            }
+        } catch (e) {
+            resultEl.textContent = '网络错误';
+            resultEl.className = 'error';
+            resultEl.classList.remove('hidden');
+        }
+    }
+
+    async function aiCreate() {
+        const input = document.getElementById('aiInput');
+        const responseEl = document.getElementById('aiResponse');
+        const message = input.value.trim();
+        if (!message) { alert('请输入描述'); return; }
+
+        responseEl.className = 'loading';
+        responseEl.textContent = '🤔 AI 正在思考...';
+        responseEl.classList.remove('hidden');
+
+        try {
+            const res = await fetch('/api/agent/chat', {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ message })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                responseEl.className = 'success';
+                responseEl.innerHTML = `✅ ${data.message}<br>📌 行程已创建：${data.schedule.title} (${data.schedule.startTime})`;
+                loadSchedules(currentPage);
+                input.value = '';
+            } else {
+                responseEl.className = 'error';
+                responseEl.textContent = '❌ ' + (data.message || 'AI 处理失败');
+            }
+        } catch (e) {
+            responseEl.className = 'error';
+            responseEl.textContent = '网络错误';
+        }
+    }
+</script>
+</body>
+</html>

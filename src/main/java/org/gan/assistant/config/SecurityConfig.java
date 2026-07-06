@@ -32,8 +32,15 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session ->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz->authz
-                        .requestMatchers("/api/auth/**").permitAll()//注册与登录放行
-                        .requestMatchers("/hello").permitAll()//测试接口暂时放行
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/hello",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+
+                        ).permitAll()//注册与登录放行
+                        //测试接口暂时放行
                         .anyRequest().authenticated()
                 )
         .httpBasic(httpBasic->httpBasic.disable());
