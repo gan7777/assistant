@@ -24,13 +24,13 @@ import java.util.stream.Collectors;
 public class ScheduleService {
 
     @Autowired
-    private ScheduleRepository scheduleRepository;
+    private  ScheduleRepository scheduleRepository;
 
     @Autowired
-    private SecurityUtils securityUtils;
+    private  SecurityUtils securityUtils;
 
     //创建行程
-    public ScheduleResponse createSchedule(ScheduleRequest request){
+    public  ScheduleResponse createSchedule(ScheduleRequest request){
         User currentUser=securityUtils.getCurrentUser();
 
         Schedule schedule=new Schedule();
@@ -90,7 +90,7 @@ public class ScheduleService {
         scheduleRepository.delete(schedule);
     }
 
-    public ScheduleResponse toResponse(Schedule schedule){
+    public static ScheduleResponse toResponse(Schedule schedule){
         ScheduleResponse response=new ScheduleResponse();
         response.setId(schedule.getId());
         response.setTitle(schedule.getTitle());
@@ -124,7 +124,7 @@ public class ScheduleService {
 
         //将Schedule 实体转换为ScheduleeResponse DTO
         List<ScheduleResponse> content=schedulePage.getContent().stream()
-                .map(this::toResponse)
+                .map(ScheduleService::toResponse)
                 .collect(Collectors.toList());
 
         //返回分页响应

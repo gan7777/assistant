@@ -19,3 +19,8 @@ server:
 jwt:
   secret: gan7777-ai-assistant-secret-key-2026-very-long-and-secure
   expiration: 86400000  # 24小时，单位毫秒
+
+ai:
+  qwen:
+    api-key: sk-bdf64f94c60b42038413ebed47d5bedf
+    model: qwen-plus
